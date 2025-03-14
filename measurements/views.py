@@ -1,8 +1,38 @@
-from django.http import JsonResponse
+from django.shortcuts import render
+from django.http import JsonResponse, HttpResponseRedirect
+from django.urls import reverse
 from django.views.decorators.csrf import csrf_exempt
 from django.core.files.storage import default_storage
 import os
 
+# Importar la lógica de measurements
+from .forms import MeasurementForm
+from django.contrib import messages
+from .logic.logic_measurement import create_measurement, get_measurements
+
+# ✅ Endpoint para ver la lista de mediciones
+def measurement_list(request):
+    measurements = get_measurements()
+    context = {
+        'measurement_list': measurements
+    }
+    return render(request, 'Measurement/measurements.html', context)
+
+# ✅ Endpoint para crear una medición
+def measurement_create(request):
+    if request.method == 'POST':
+        form = MeasurementForm(request.POST)
+        if form.is_valid():
+            create_measurement(form)
+            messages.add_message(request, messages.SUCCESS, 'Measurement created successfully')
+            return HttpResponseRedirect(reverse('measurementCreate'))
+        else:
+            print(form.errors)
+    else:
+        form = MeasurementForm()
+    return render(request, 'Measurement/measurementForm.html', {'form': form})
+
+# ✅ Endpoint para subir archivos EEG (mantén este código)
 @csrf_exempt
 def upload_eeg(request):
     if request.method == 'POST' and request.FILES.get('eeg_file'):
